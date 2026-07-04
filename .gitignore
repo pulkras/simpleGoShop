@@ -1,0 +1,21 @@
+# Go
+backend/bin/
+backend/vendor/
+
+# Node
+frontend/node_modules/
+
+# VS Code
+.vscode/
+
+# Environment
+backend/.env
+
+# Logs
+*.log
+
+# Build
+frontend/dist/
+
+# OS
+.DS_Store
