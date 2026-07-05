@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -16,18 +17,23 @@ export default function LoginPage() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
 
     async function handleSubmit(e) {
         e.preventDefault();
 
+        setLoading(true);
+
         try {
             await login(email, password);
 
-            navigate(from, {
-                replace: true,
-            });
+            toast.success("Welcome back");
+
+            navigate(from, { replace: true });
         } catch {
-            alert("Invalid email or password");
+            toast.error("Invalid credentials");
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -62,9 +68,12 @@ export default function LoginPage() {
                 />
 
                 <button
+                    disabled={loading}
                     className="bg-black text-white py-2 rounded"
                 >
-                    Login
+                    {loading
+                        ? "Logging in..."
+                        : "Login"}
                 </button>
             </form>
         </div>

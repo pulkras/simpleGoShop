@@ -20,51 +20,52 @@ export function CartProvider({ children }) {
     }, [cart]);
 
     function addToCart(product) {
-        setCart(prev => {
-            const existing = prev.find(item => item.id === product.id);
+    setCart((prev) => {
+        const existing = prev.find(
+            (p) => p.id === product.id
+        );
 
-            if (existing) {
-                return prev.map(item =>
-                    item.id === product.id
-                        ? {
-                              ...item,
-                              quantity: item.quantity + 1,
-                          }
-                        : item
-                );
-            }
+        if (existing) {
+            return prev.map((p) =>
+                p.id === product.id
+                    ? {
+                          ...p,
+                          quantity:
+                              p.quantity +
+                              (product.quantity || 1),
+                      }
+                    : p
+            );
+        }
 
-            return [
-                ...prev,
-                {
-                    ...product,
-                    quantity: 1,
-                },
-            ];
-        });
+        return [
+            ...prev,
+            {
+                ...product,
+                quantity: product.quantity || 1,
+            },
+        ];
+    });
     }
 
     function removeFromCart(id) {
         setCart(prev => prev.filter(item => item.id !== id));
     }
 
-    function updateQuantity(id, quantity) {
-        if (quantity <= 0) {
-            removeFromCart(id);
-            return;
-        }
-
-        setCart(prev =>
-            prev.map(item =>
+    function updateQuantity(id, qty) {
+    setCart((prev) =>
+        prev
+            .map((item) =>
                 item.id === id
                     ? {
                           ...item,
-                          quantity,
+                          quantity: Math.max(1, qty),
                       }
                     : item
             )
-        );
-    }
+            .filter((item) => item.quantity > 0)
+    );
+}
 
     function clearCart() {
         setCart([]);

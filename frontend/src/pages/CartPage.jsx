@@ -1,16 +1,16 @@
-import { createOrder } from "../api/orders";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import Button from "../components/ui/Button";
+import EmptyState from "../components/ui/EmptyState";
 
 import { useCart } from "../context/CartContext";
-
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { createOrder } from "../api/orders";
+
+import toast from "react-hot-toast";
 
 export default function CartPage() {
-
-    const navigate = useNavigate();
-
-    const { isAuth } = useAuth();
-
     const {
         cart,
         removeFromCart,
@@ -19,20 +19,22 @@ export default function CartPage() {
         total,
     } = useCart();
 
-    async function handleCheckout() {
+    const { isAuth } = useAuth();
+    const navigate = useNavigate();
 
+    const [loading, setLoading] = useState(false);
+
+    async function handleCheckout() {
         if (!isAuth) {
             navigate("/login", {
-                state: {
-                    from: {
-                        pathname: "/cart",
-                    },
-                },
+                state: { from: { pathname: "/cart" } },
             });
-
             return;
         }
+
         if (cart.length === 0) return;
+
+        setLoading(true);
 
         const items = cart.map((item) => ({
             product_id: item.id,
@@ -43,91 +45,130 @@ export default function CartPage() {
         try {
             const res = await createOrder(items);
 
-            alert(`Order #${res.order_id} created`);
+            toast.success(
+                `Order #${res.order_id} created`
+            );
 
             clearCart();
+            navigate("/orders");
         } catch (err) {
             console.error(err);
-
-            alert("Failed to create order");
+            toast.error("Failed to create order");
+        } finally {
+            setLoading(false);
         }
     }
 
     if (cart.length === 0) {
         return (
-            <>
-                <h1 className="text-2xl font-bold mb-4">
-                    Cart
-                </h1>
-
-                <p>Cart is empty.</p>
-            </>
+            <EmptyState
+                title="Your cart is empty"
+                description="Start adding products to see them here"
+                action={
+                    <Button onClick={() => navigate("/")}>
+                        Continue shopping
+                    </Button>
+                }
+            />
         );
     }
 
     return (
-        <div>
-            <h1 className="text-2xl font-bold mb-6">
-                Cart
-            </h1>
+        <div className="space-y-6">
+            <h1 className="text-2xl font-bold">Cart</h1>
 
-            {cart.map((item) => (
-                <div
-                    key={item.id}
-                    className="border rounded-lg p-4 mb-4 flex justify-between items-center"
-                >
-                    <div>
-                        <h2 className="font-semibold">
-                            {item.title}
-                        </h2>
+            <div className="space-y-4">
+                {cart.map((item) => (
+                    <div
+                        key={item.id}
+                        className="border rounded-lg p-4 flex justify-between items-center"
+                    >
+                        <div>
+                            <h2 className="font-semibold">
+                                {item.title}
+                            </h2>
 
-                        <p>${item.price}</p>
+                            <p className="text-gray-600">
+                                ${item.price} ×{" "}
+                                {item.quantity}
+                            </p>
+
+                            <p className="font-medium">
+                                Subtotal: $
+                                {(
+                                    item.price *
+                                    item.quantity
+                                ).toFixed(2)}
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                className="px-3 py-1 border rounded"
+                                onClick={() =>
+                                    updateQuantity(
+                                        item.id,
+                                        item.quantity - 1
+                                    )
+                                }
+                            >
+                                -
+                            </button>
+
+                            <span>{item.quantity}</span>
+
+                            <button
+                                className="px-3 py-1 border rounded"
+                                onClick={() =>
+                                    updateQuantity(
+                                        item.id,
+                                        item.quantity + 1
+                                    )
+                                }
+                            >
+                                +
+                            </button>
+
+                            <Button
+                                variant="danger"
+                                onClick={() =>
+                                    removeFromCart(item.id)
+                                }
+                            >
+                                Remove
+                            </Button>
+                        </div>
                     </div>
+                ))}
+            </div>
 
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) =>
-                                updateQuantity(
-                                    item.id,
-                                    Number(e.target.value)
-                                )
-                            }
-                            className="border w-16 p-1"
-                        />
-
-                        <button
-                            onClick={() =>
-                                removeFromCart(item.id)
-                            }
-                            className="bg-red-500 text-white px-3 py-1 rounded"
-                        >
-                            Remove
-                        </button>
-                    </div>
+            <div className="sticky bottom-0 border-t bg-white p-4 flex justify-between items-center shadow-md">
+                <div>
+                    <p className="text-lg font-bold">
+                        Total: ${total.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                        {cart.length} items
+                    </p>
                 </div>
-            ))}
 
-            <h2 className="text-xl font-bold mb-4">
-                Total: ${total.toFixed(2)}
-            </h2>
+                <div className="flex gap-3">
+                    <Button
+                        variant="secondary"
+                        onClick={clearCart}
+                    >
+                        Clear
+                    </Button>
 
-            <div className="flex gap-3">
-                <button
-                    onClick={handleCheckout}
-                    className="bg-black text-white px-5 py-2 rounded"
-                >
-                    Checkout
-                </button>
-
-                <button
-                    onClick={clearCart}
-                    className="bg-red-500 text-white px-5 py-2 rounded"
-                >
-                    Clear cart
-                </button>
+                    <Button
+                        onClick={handleCheckout}
+                        disabled={loading}
+                    >
+                        {loading
+                            ? "Processing..."
+                            : "Checkout"}
+                    </Button>
+                </div>
             </div>
         </div>
     );
