@@ -42,16 +42,20 @@ func NewRouter(db *sqlx.DB) http.Handler {
     productRepo := product.NewRepository(db)
     productService := product.NewService(productRepo)
     productHandler := product.NewHandler(productService)
-	r.Route("/api/products", func(r chi.Router) {
-		r.Get("/", productHandler.GetAll)
-		r.Post("/", productHandler.Create)
+	
+    r.Route("/api/products", func(r chi.Router) {
+	r.Get("/", productHandler.GetAll)
+	r.Get("/{id}", productHandler.GetByID)
 
-		r.Route("/{id}", func(r chi.Router) {
-			r.Get("/", productHandler.GetByID)
-			r.Put("/", productHandler.Update)
-			r.Delete("/", productHandler.Delete)
-		})
+	r.Group(func(r chi.Router) {
+		r.Use(auth.Middleware)
+		r.Use(auth.RequireAdmin)
+
+		r.Post("/", productHandler.Create)
+		r.Put("/{id}", productHandler.Update)
+		r.Delete("/{id}", productHandler.Delete)
 	})
+    })
 
 	// --------------------
 	// ORDERS
@@ -75,5 +79,17 @@ func NewRouter(db *sqlx.DB) http.Handler {
 
     r.Post("/api/auth/register", authHandler.Register)
     r.Post("/api/auth/login", authHandler.Login)
+
+
+    r.Route("/api/admin", func(r chi.Router) {
+	r.Use(auth.Middleware)
+	r.Use(auth.RequireAdmin)
+
+	r.Post("/products", productHandler.Create)
+	r.Put("/products/{id}", productHandler.Update)
+	r.Delete("/products/{id}", productHandler.Delete)
+})
+	
+
 	return r
 }

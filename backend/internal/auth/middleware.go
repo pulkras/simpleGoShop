@@ -8,7 +8,10 @@ import (
 
 type contextKey string
 
-const UserContextKey = contextKey("user_id")
+const (
+	UserContextKey contextKey = "user_id"
+	RoleContextKey contextKey = "role"
+)
 
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +31,22 @@ func Middleware(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), UserContextKey, claims.UserID)
+		ctx = context.WithValue(ctx, RoleContextKey, claims.Role)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func RequireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		role, _ := r.Context().Value(RoleContextKey).(string)
+
+		if role != "admin" {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }

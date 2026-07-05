@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+import "log"
+
 type Handler struct {
 	service *Service
 }
@@ -39,22 +41,31 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginReq
-
-	json.NewDecoder(r.Body).Decode(&req)
-
-	userID, err := h.service.Login(req.Email, req.Password)
-	if err != nil {
-		http.Error(w, err.Error(), 401)
+	
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", 400)
 		return
 	}
 
-	token, err := GenerateToken(userID)
+	userID, role, err := h.service.Login(req.Email, req.Password)
+	if err != nil {
+		http.Error(w, "invalid credentials", 401)
+		return
+	}
+
+
+	token, err := GenerateToken(userID, role)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
+	log.Println("ROLE FROM DB:", role)
+	log.Println("JWT:", token)
+
 	json.NewEncoder(w).Encode(map[string]string{
 		"token": token,
 	})
+
+
 }

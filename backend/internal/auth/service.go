@@ -23,16 +23,16 @@ func (s *Service) Register(email, password string) (int, error) {
 	return s.repo.CreateUser(email, string(hash))
 }
 
-func (s *Service) Login(email, password string) (int, error) {
+func (s *Service) Login(email, password string) (int, string, error) {
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		return 0, errors.New("invalid credentials")
+		return 0, "", err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
-		return 0, errors.New("invalid credentials")
+		return 0, "", errors.New("invalid credentials")
 	}
 
-	return user.ID, nil
+	return user.ID, user.Role, nil
 }
