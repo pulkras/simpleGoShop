@@ -1,4 +1,4 @@
-package repository
+package product
 
 import (
 	"simpleGoShop/backend/internal/models"
@@ -6,16 +6,15 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type ProductRepository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewProductRepository(db *sqlx.DB) *ProductRepository {
-	return &ProductRepository{db: db}
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{db: db}
 }
 
-// GET ALL
-func (r *ProductRepository) GetAll() ([]models.Product, error) {
+func (r *Repository) GetAll() ([]models.Product, error) {
 	var products []models.Product
 
 	err := r.db.Select(&products, `
@@ -27,8 +26,7 @@ func (r *ProductRepository) GetAll() ([]models.Product, error) {
 	return products, err
 }
 
-// GET BY ID
-func (r *ProductRepository) GetByID(id int) (models.Product, error) {
+func (r *Repository) GetByID(id int) (models.Product, error) {
 	var p models.Product
 
 	err := r.db.Get(&p, `
@@ -40,8 +38,7 @@ func (r *ProductRepository) GetByID(id int) (models.Product, error) {
 	return p, err
 }
 
-// CREATE
-func (r *ProductRepository) Create(p models.Product) (int, error) {
+func (r *Repository) Create(p models.Product) (int, error) {
 	var id int
 
 	err := r.db.QueryRow(`
@@ -53,8 +50,7 @@ func (r *ProductRepository) Create(p models.Product) (int, error) {
 	return id, err
 }
 
-// UPDATE
-func (r *ProductRepository) Update(id int, p models.Product) error {
+func (r *Repository) Update(id int, p models.Product) error {
 	_, err := r.db.Exec(`
 		UPDATE products
 		SET title=$1, description=$2, price=$3, stock=$4
@@ -64,8 +60,7 @@ func (r *ProductRepository) Update(id int, p models.Product) error {
 	return err
 }
 
-// DELETE
-func (r *ProductRepository) Delete(id int) error {
+func (r *Repository) Delete(id int) error {
 	_, err := r.db.Exec(`
 		DELETE FROM products WHERE id=$1
 	`, id)

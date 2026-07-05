@@ -1,4 +1,4 @@
-package handlers
+package product
 
 import (
 	"encoding/json"
@@ -6,21 +6,19 @@ import (
 	"strconv"
 
 	"simpleGoShop/backend/internal/models"
-	"simpleGoShop/backend/internal/service"
 
 	"github.com/go-chi/chi/v5"
 )
 
-type ProductHandler struct {
-	service *service.ProductService
+type Handler struct {
+	service *Service
 }
 
-func NewProductHandler(service *service.ProductService) *ProductHandler {
-	return &ProductHandler{service: service}
+func NewHandler(s *Service) *Handler {
+	return &Handler{service: s}
 }
 
-// GET ALL
-func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	data, err := h.service.GetAll()
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -29,8 +27,7 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-// GET BY ID
-func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 
 	data, err := h.service.GetByID(id)
@@ -42,8 +39,7 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-// CREATE
-func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var p models.Product
 
 	json.NewDecoder(r.Body).Decode(&p)
@@ -57,8 +53,7 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]int{"id": id})
 }
 
-// UPDATE
-func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 
 	var p models.Product
@@ -73,8 +68,7 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// DELETE
-func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 
 	err := h.service.Delete(id)

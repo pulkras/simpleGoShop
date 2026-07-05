@@ -2,7 +2,15 @@ import { createOrder } from "../api/orders";
 
 import { useCart } from "../context/CartContext";
 
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 export default function CartPage() {
+
+    const navigate = useNavigate();
+
+    const { isAuth } = useAuth();
+
     const {
         cart,
         removeFromCart,
@@ -12,6 +20,18 @@ export default function CartPage() {
     } = useCart();
 
     async function handleCheckout() {
+
+        if (!isAuth) {
+            navigate("/login", {
+                state: {
+                    from: {
+                        pathname: "/cart",
+                    },
+                },
+            });
+
+            return;
+        }
         if (cart.length === 0) return;
 
         const items = cart.map((item) => ({

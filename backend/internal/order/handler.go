@@ -1,40 +1,70 @@
-package handlers
+package order
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"simpleGoShop/backend/internal/service"
+	"simpleGoShop/backend/internal/auth"
 	"simpleGoShop/backend/internal/models"
 )
 
-type OrderHandler struct {
-	service *service.OrderService
+type Handler struct {
+	service *Service
 }
 
-func NewOrderHandler(s *service.OrderService) *OrderHandler {
-	return &OrderHandler{s}
+func NewHandler(s *Service) *Handler {
+	return &Handler{service: s}
 }
 
-var items []models.OrderItem
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
-func (h *OrderHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var items []models.OrderItem
-
-	json.NewDecoder(r.Body).Decode(&items)
-
-	orderID, err := h.service.CreateOrder(items)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
+	userID := r.Context().Value(auth.UserContextKey)
+	if userID == nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
+	uid := userID.(int)
+
+	var items []models.OrderItem
+
+	if err := json.NewDecoder(r.Body).Decode(&items); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	orderID, err := h.service.CreateOrder(uid, items)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{
 		"order_id": orderID,
 	})
 }
 
-func (h *OrderHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	// позже добавим DB fetch
-	w.Write([]byte("not implemented yet"))
+func (h *Handler) GetOrders(w http.ResponseWriter, r *http.Request) {
+
+	userID := r.Context().Value(auth.UserContextKey)
+	if userID == nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	uid := userID.(int)
+
+	orders, err := h.service.GetOrders(uid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if orders == nil {
+		orders = []OrderResponse{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(orders)
 }

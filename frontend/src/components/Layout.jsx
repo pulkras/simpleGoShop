@@ -1,14 +1,18 @@
 import { Link } from "react-router-dom";
 
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function Layout({ children }) {
     const { itemsCount } = useCart();
+
+    const { isAuth, logout } = useAuth();
 
     return (
         <div>
             <header className="border-b p-4">
                 <div className="max-w-6xl mx-auto flex justify-between items-center">
+
                     <Link
                         to="/"
                         className="font-bold text-2xl"
@@ -16,7 +20,8 @@ export default function Layout({ children }) {
                         SimpleGoShop
                     </Link>
 
-                    <nav className="flex gap-6">
+                    <nav className="flex gap-6 items-center">
+
                         <Link to="/">
                             Products
                         </Link>
@@ -24,6 +29,30 @@ export default function Layout({ children }) {
                         <Link to="/cart">
                             Cart ({itemsCount})
                         </Link>
+
+                        <Link to="/orders">
+                            My Orders
+                        </Link>
+
+                        {!isAuth ? (
+                            <>
+                                <Link to="/login">
+                                    Login
+                                </Link>
+
+                                <Link to="/register">
+                                    Register
+                                </Link>
+                            </>
+                        ) : (
+                            <button
+                                onClick={logout}
+                                className="border px-3 py-1 rounded"
+                            >
+                                Logout
+                            </button>
+                        )}
+
                     </nav>
                 </div>
             </header>

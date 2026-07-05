@@ -4,8 +4,9 @@ import (
 	"net/http"
 
 	"simpleGoShop/backend/internal/handlers"
-	"simpleGoShop/backend/internal/repository"
-	"simpleGoShop/backend/internal/service"
+	"simpleGoShop/backend/internal/product"
+	"simpleGoShop/backend/internal/order"
+	"simpleGoShop/backend/internal/auth"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -38,10 +39,9 @@ func NewRouter(db *sqlx.DB) http.Handler {
 	// --------------------
 	// PRODUCTS
 	// --------------------
-	productRepo := repository.NewProductRepository(db)
-	productService := service.NewProductService(productRepo)
-	productHandler := handlers.NewProductHandler(productService)
-
+    productRepo := product.NewRepository(db)
+    productService := product.NewService(productRepo)
+    productHandler := product.NewHandler(productService)
 	r.Route("/api/products", func(r chi.Router) {
 		r.Get("/", productHandler.GetAll)
 		r.Post("/", productHandler.Create)
@@ -56,12 +56,24 @@ func NewRouter(db *sqlx.DB) http.Handler {
 	// --------------------
 	// ORDERS
 	// --------------------
-	orderRepo := repository.NewOrderRepository(db)
-	orderService := service.NewOrderService(orderRepo)
-	orderHandler := handlers.NewOrderHandler(orderService)
+    orderRepo := order.NewRepository(db)
+    orderService := order.NewService(orderRepo)
+    orderHandler := order.NewHandler(orderService)
 
-	r.Get("/api/orders", orderHandler.GetAll)
+	// r.Get("/api/orders", orderHandler.GetAll)
+    r.Group(func(r chi.Router) {
+	r.Use(auth.Middleware)
+
 	r.Post("/api/orders", orderHandler.Create)
+	r.Get("/api/orders", orderHandler.GetOrders)
+    })
 
+
+	authRepo := auth.NewRepository(db)
+    authService := auth.NewService(authRepo)
+    authHandler := auth.NewHandler(authService)
+
+    r.Post("/api/auth/register", authHandler.Register)
+    r.Post("/api/auth/login", authHandler.Login)
 	return r
 }
